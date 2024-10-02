@@ -1,0 +1,35 @@
+# Python
+*.pyc
+__pycache__/
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Config files
+*.env
+
+# Database
+*.sqlite3
+*.db
+
+# Pytest cache
+.pytest_cache/
+
+# Logs
+*.log
+logs/
+
+# VSCode settings
+.vscode/
+
+# Byte-compiled / optimized / DLL files
+*.pyo
+*.pyd
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# MacOS system files
+.DS_Store

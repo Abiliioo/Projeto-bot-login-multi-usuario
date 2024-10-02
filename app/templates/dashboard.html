@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Bem-vindo ao Dashboard</h1>
+
+        <!-- Seção para exibir o Chat ID do usuário -->
+        <h2 class="mt-5">Seu Chat ID do Telegram</h2>
+        {% if current_user.chat_id %}
+            <p>Seu Chat ID é: <strong>{{ current_user.chat_id }}</strong></p>
+        {% else %}
+            <p>Você ainda não interagiu com o bot para registrar seu Chat ID.</p>
+            <p>Inicie uma conversa com nosso bot no Telegram clicando no link abaixo:</p>
+            <p><a href="https://t.me/O_Freela_bot" class="btn btn-primary" target="_blank">Iniciar conversa com o Bot</a></p>
+            <p>Após iniciar a conversa, o Chat ID será vinculado automaticamente ao seu perfil.</p>
+        {% endif %}
+
+        <!-- Botões para iniciar e parar o bot -->
+        <h2 class="mt-5">Controle do Bot</h2>
+        <div class="mb-3">
+            <button class="btn btn-success" onclick="startBot()">Iniciar Bot</button>
+            <button class="btn btn-danger" onclick="stopBot()">Parar Bot</button>
+        </div>
+        <p id="status">Status: Verificação não iniciada.</p>
+
+        <!-- Formulário para adicionar palavras-chave -->
+        <h2 class="mt-5">Adicionar Palavras-Chave</h2>
+        <form action="{{ url_for('main.dashboard') }}" method="POST">
+            <div class="form-group">
+                <label for="keyword">Palavras-chave (separadas por vírgula):</label>
+                <input type="text" class="form-control" id="keyword" name="keyword" placeholder="ex: excel, vba, python" required>
+            </div>
+            <button type="submit" class="btn btn-success">Salvar Palavras-Chave</button>
+        </form>
+
+        <!-- Exibe as palavras-chave já cadastradas -->
+        <h3 class="mt-5">Suas Palavras-Chave:</h3>
+        {% if keywords %}
+        <ul class="list-group">
+        {% for keyword in keywords %}
+            <li class="list-group-item">{{ keyword.keyword }}</li>
+        {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
+        {% endif %}
+
+        <!-- Mensagens de sucesso/erro -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mt-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        async function startBot() {
+            const response = await fetch('/start_bot', {method: 'POST'});
+            const result = await response.json();
+            document.getElementById('status').textContent = 'Status: ' + result.status;
+        }
+
+        async function stopBot() {
+            const response = await fetch('/stop_bot', {method: 'POST'});
+            const result = await response.json();
+            document.getElementById('status').textContent = 'Status: ' + result.status;
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
