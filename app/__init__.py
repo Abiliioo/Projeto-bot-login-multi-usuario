@@ -10,7 +10,7 @@ login_manager = LoginManager()
 login_manager.login_view = 'main.login'
 login_manager.login_message = 'Por favor, faça login para acessar esta página.'
 
-def create_app(config_name):
+def create_app(config_name='production'): 
     app = Flask(__name__)
 
     # Carrega as configurações do ambiente
