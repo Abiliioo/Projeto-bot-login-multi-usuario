@@ -1,9 +1,10 @@
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_migrate import Migrate  # Importa o Flask-Migrate
 from config import config
 
-# Inicialização das extensões (sem importar models ainda)
+# Inicialização das extensões
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'main.login'
@@ -18,6 +19,9 @@ def create_app(config_name):
     # Inicializa o banco de dados e o gerenciador de login
     db.init_app(app)
     login_manager.init_app(app)
+
+    # Inicializa o Flask-Migrate
+    migrate = Migrate(app, db)  # Adiciona a integração com Flask-Migrate
 
     # Importação de models e User aqui, para evitar importação circular
     from .models import User
