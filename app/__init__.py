@@ -16,6 +16,10 @@ def create_app(config_name='production'):
     # Carrega as configurações do ambiente
     app.config.from_object(config[config_name])
 
+    # Verifica se a DATABASE_URL está usando 'postgres://' e substitui por 'postgresql://'
+    if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
+        app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://")
+
     # Inicializa o banco de dados e o gerenciador de login
     db.init_app(app)
     login_manager.init_app(app)
