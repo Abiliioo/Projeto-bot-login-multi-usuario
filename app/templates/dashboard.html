@@ -5,11 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Bem-vindo ao Dashboard</h1>
+
+        <!-- Botão de logout -->
+        <div class="text-right">
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+        </div>
 
         <!-- Seção para exibir o Chat ID do usuário -->
         <h2 class="mt-5">Seu Chat ID do Telegram</h2>
@@ -25,8 +30,8 @@
         <!-- Botões para iniciar e parar o bot -->
         <h2 class="mt-5">Controle do Bot</h2>
         <div class="mb-3">
-            <button class="btn btn-success" onclick="startBot()">Iniciar Bot</button>
-            <button class="btn btn-danger" onclick="stopBot()">Parar Bot</button>
+            <button class="btn btn-success" id="start-bot-btn">Iniciar Bot</button>
+            <button class="btn btn-danger" id="stop-bot-btn">Parar Bot</button>
         </div>
         <p id="status">Status: Verificação não iniciada.</p>
 
@@ -39,15 +44,20 @@
             </div>
             <button type="submit" class="btn btn-success">Salvar Palavras-Chave</button>
         </form>
-
-        <!-- Exibe as palavras-chave já cadastradas -->
+        
+        <!-- Exibe as palavras-chave já cadastradas como "chips" -->
         <h3 class="mt-5">Suas Palavras-Chave:</h3>
         {% if keywords %}
-        <ul class="list-group">
+        <div>
         {% for keyword in keywords %}
-            <li class="list-group-item">{{ keyword.keyword }}</li>
+            <div class="keyword-chip">
+                {{ keyword.keyword }}
+                <form action="{{ url_for('main.remove_keyword', keyword_id=keyword.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" aria-label="Remover">&times;</button>
+                </form>
+            </div>
         {% endfor %}
-        </ul>
+        </div>
         {% else %}
         <p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
         {% endif %}
@@ -66,22 +76,16 @@
         {% endwith %}
     </div>
 
-    <script>
-        async function startBot() {
-            const response = await fetch('/start_bot', {method: 'POST'});
-            const result = await response.json();
-            document.getElementById('status').textContent = 'Status: ' + result.status;
-        }
-
-        async function stopBot() {
-            const response = await fetch('/stop_bot', {method: 'POST'});
-            const result = await response.json();
-            document.getElementById('status').textContent = 'Status: ' + result.status;
-        }
-    </script>
+    <!-- Rodapé -->
+    <footer class="mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <p>&copy; {{ current_year }} Verificador de Projetos 99Freelas. Todos os direitos reservados.</p>
+        </div>
+    </footer>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

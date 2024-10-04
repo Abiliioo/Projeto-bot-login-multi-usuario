@@ -17,11 +17,15 @@ def create_app(config_name='production'):
     app.config.from_object(config[config_name])
 
     # Verifica se a DATABASE_URL está usando 'postgres://' e substitui por 'postgresql://'
-    if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
+    if 'SQLALCHEMY_DATABASE_URI' in app.config and app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
         app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://")
 
-    # Inicializa o banco de dados e o gerenciador de login
-    db.init_app(app)
+    # Inicializa o banco de dados e o gerenciador de login com tratamento de erros
+    try:
+        db.init_app(app)
+    except Exception as e:
+        app.logger.error(f"Erro ao inicializar o banco de dados: {e}")
+
     login_manager.init_app(app)
 
     # Inicializa o Flask-Migrate
@@ -45,10 +49,12 @@ def create_app(config_name='production'):
     # Tratamento de erros (páginas customizadas para erros 404 e 500)
     @app.errorhandler(404)
     def page_not_found(e):
+        app.logger.warning(f"Página não encontrada: {e}")
         return render_template('404.html'), 404
 
     @app.errorhandler(500)
     def internal_server_error(e):
+        app.logger.error(f"Erro interno no servidor: {e}")
         return render_template('500.html'), 500
 
     return app

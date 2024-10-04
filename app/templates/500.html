@@ -5,14 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Erro 500 - Erro Interno</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center text-danger">Erro 500 - Erro Interno do Servidor</h1>
-        <p class="text-center">Desculpe, algo deu errado no nosso servidor. Por favor, tente novamente mais tarde.</p>
-        <div class="text-center">
-            <a href="/" class="btn btn-primary">Voltar para a página inicial</a>
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <h1 class="text-danger display-4">Erro 500</h1>
+                <h2 class="text-dark">Erro Interno do Servidor</h2>
+                <p class="lead">Desculpe, algo deu errado no nosso servidor. Por favor, tente novamente mais tarde.</p>
+                <a href="/" class="btn btn-primary btn-lg mt-3">Voltar para a página inicial</a>
+            </div>
         </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

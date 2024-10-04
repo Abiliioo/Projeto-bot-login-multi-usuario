@@ -6,7 +6,6 @@ from lxml import html
 import requests
 import asyncio
 import aiohttp
-import config
 from flask import Flask, request, jsonify  # Importações necessárias
 from .models import User  # Importa o modelo User para verificar assinantes
 from . import db
@@ -19,6 +18,7 @@ URL_BASE = "https://www.99freelas.com.br/projects?page="
 MENSAGEM_BASE = "Os seguintes projetos foram encontrados:\n\n"
 INTERVALO_MIN = 2 * 60  # 2 minutos
 INTERVALO_MAX = 5 * 60  # 5 minutos
+ARQUIVO_PROJETOS = 'projetos_enviados.json'
 
 class VerificadorDeProjetos:
     def __init__(self):
@@ -27,10 +27,12 @@ class VerificadorDeProjetos:
         self.logs = []  # Armazena logs
         self.thread = None
 
-    # Carrega os projetos já enviados de um arquivo JSON
     def carregar_projetos_enviados(self):
+        """
+        Carrega os projetos já enviados de um arquivo JSON para evitar duplicidade.
+        """
         try:
-            with open('projetos_enviados.json', 'r', encoding='utf-8') as json_file:
+            with open(ARQUIVO_PROJETOS, 'r', encoding='utf-8') as json_file:
                 return set(json.load(json_file))
         except FileNotFoundError:
             return set()
@@ -38,18 +40,22 @@ class VerificadorDeProjetos:
             self.logs.append(f"Erro ao carregar projetos enviados: {e}")
             return set()
 
-    # Salva os projetos enviados em um arquivo JSON
     def salvar_projetos_enviados(self):
+        """
+        Salva os projetos já enviados em um arquivo JSON.
+        """
         try:
-            with open('projetos_enviados.json', 'w', encoding='utf-8') as json_file:
+            with open(ARQUIVO_PROJETOS, 'w', encoding='utf-8') as json_file:
                 json.dump(list(self.projetos_enviados), json_file, ensure_ascii=False)
         except Exception as e:
             self.logs.append(f"Erro ao salvar projetos enviados: {e}")
 
-    # Busca e extrai os títulos e links dos projetos
     async def obter_titulos_links_projetos(self, page, session):
+        """
+        Busca os títulos e links dos projetos na página específica.
+        """
         try:
-            async with session.get(URL_BASE + str(page)) as response:
+            async with session.get(f"{URL_BASE}{page}") as response:
                 tree = html.fromstring(await response.text())
                 titulos = tree.xpath('//h1[@class="title"]/a/text()')
                 links = tree.xpath('//h1[@class="title"]/a/@href')
@@ -58,12 +64,16 @@ class VerificadorDeProjetos:
             self.logs.append(f"Erro ao obter projetos da página {page}: {e}")
             return []
 
-    # Verifica se o título do projeto contém alguma das palavras-chave do usuário
     def projeto_corresponde(self, titulo_projeto, keywords):
+        """
+        Verifica se o título do projeto contém alguma das palavras-chave do usuário.
+        """
         return any(keyword.lower() in titulo_projeto.lower() for keyword in keywords)
 
-    # Envia uma mensagem para o Telegram usando o aiohttp
     async def enviar_mensagem_telegram(self, texto, bot_token, chat_id):
+        """
+        Envia uma mensagem para o Telegram usando aiohttp.
+        """
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         payload = {
             "chat_id": chat_id,
@@ -78,12 +88,12 @@ class VerificadorDeProjetos:
                 self.logs.append(f"Erro ao enviar mensagem: {e}")
                 return None
 
-    # Função para verificar se o usuário é assinante e salvar o chat_id
     async def verificar_e_salvar_chat_id(self, phone_number, chat_id):
-        # Verifica se o número de telefone pertence a um assinante
+        """
+        Verifica se o número de telefone é de um assinante e salva o chat_id.
+        """
         user = User.query.filter_by(phone_number=phone_number, is_subscriber=True).first()
         if user:
-            # Se o usuário for assinante, salva o chat_id no banco de dados
             user.chat_id = chat_id
             db.session.commit()
             self.logs.append(f"Chat ID salvo para o assinante: {user.username}")
@@ -92,8 +102,10 @@ class VerificadorDeProjetos:
             self.logs.append(f"Usuário com telefone {phone_number} não é assinante.")
             return False
 
-    # Executa a verificação dos projetos em várias páginas
     async def executar_verificacao(self, total_pages, keywords, bot_token, chat_id):
+        """
+        Executa a verificação dos projetos em várias páginas e envia notificações.
+        """
         self.logs.append("Iniciando verificação de projetos...")
         async with aiohttp.ClientSession() as session:
             for current_page in range(1, total_pages + 1):
@@ -108,36 +120,41 @@ class VerificadorDeProjetos:
         self.salvar_projetos_enviados()
         self.logs.append("Verificação concluída.")
 
-    # Função para executar a verificação em intervalos de tempo
     def run_schedule(self, total_pages, keywords, bot_token, chat_id):
+        """
+        Executa a verificação em intervalos aleatórios.
+        """
         while self.deve_continuar:
             intervalo_aleatorio = random.randint(INTERVALO_MIN, INTERVALO_MAX)
             asyncio.run(self.executar_verificacao(total_pages, keywords, bot_token, chat_id))
             threading.Event().wait(intervalo_aleatorio)
 
-    # Inicia a verificação em uma thread separada
     def iniciar_verificacao(self, total_pages, keywords, bot_token, chat_id):
+        """
+        Inicia a verificação em uma thread separada.
+        """
         self.deve_continuar = True
         if self.thread is None or not self.thread.is_alive():
             self.thread = threading.Thread(target=self.run_schedule, args=(total_pages, keywords, bot_token, chat_id))
             self.thread.start()
 
-    # Para a verificação
     def parar_verificacao(self):
+        """
+        Para a verificação.
+        """
         self.deve_continuar = False
         if self.thread:
             self.thread.join()
 
 
-# Webhook para capturar as interações do bot com o usuário
+# Webhook para interações do bot com o usuário
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json
     if "message" in data:
         chat_id = data['message']['chat']['id']
-        phone_number = data['message']['contact']['phone_number']  # Obtém o número de telefone se disponível
+        phone_number = data['message'].get('contact', {}).get('phone_number')  # Obtém o número de telefone se disponível
 
-        # Verifica se o usuário com o número de telefone fornecido é um assinante
         verificador = VerificadorDeProjetos()
         if asyncio.run(verificador.verificar_e_salvar_chat_id(phone_number, chat_id)):
             return jsonify({"status": "Chat ID salvo com sucesso para o assinante."})

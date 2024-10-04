@@ -4,15 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificação de Projetos 99Freelas</title>
+    <meta name="description" content="Automatize suas buscas por projetos no 99Freelas e receba notificações diretamente no Telegram com palavras-chave personalizadas.">
+    <meta name="keywords" content="99Freelas, projetos, automatização, palavras-chave, Telegram, freelancer">
+    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
 
     <div class="hero">
         <h1>Automatize suas Buscas de Projetos no 99Freelas</h1>
         <p>Nosso bot verifica e envia os melhores projetos para você, baseado em palavras-chave personalizadas.</p>
-        <a href="{{ url_for('main.register') }}" class="btn btn-custom btn-lg">Cadastre-se Agora</a>
+
+        <!-- Exibe o botão dependendo do status de autenticação -->
+        {% if current_user.is_authenticated %}
+            <p>Bem-vindo de volta, {{ current_user.username }}!</p>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-light btn-lg mt-3">Ir para o Dashboard</a> <!-- Alterado para btn-light -->
+        {% else %}
+            <a href="{{ url_for('main.register') }}" class="btn btn-custom btn-lg">Cadastre-se Agora</a>
+        {% endif %}
     </div>
 
     <div class="content">
@@ -20,11 +31,15 @@
             <h2>Por que usar nosso serviço?</h2>
             <p>Com nossa plataforma, você pode:</p>
             <ul class="list-unstyled">
-                <li>✔ Receber notificações de novos projetos diretamente no Telegram.</li>
-                <li>✔ Personalizar palavras-chave para encontrar projetos relevantes.</li>
-                <li>✔ Automatizar a busca de projetos enquanto você foca no seu trabalho.</li>
+                <li><i class="fas fa-check"></i> Receber notificações de novos projetos diretamente no Telegram.</li>
+                <li><i class="fas fa-check"></i> Personalizar palavras-chave para encontrar projetos relevantes.</li>
+                <li><i class="fas fa-check"></i> Automatizar a busca de projetos enquanto você foca no seu trabalho.</li>
             </ul>
-            <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-lg mt-3">Faça Login</a>
+
+            <!-- Só mostra o botão de login se o usuário não estiver logado -->
+            {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-lg mt-3">Faça Login</a>
+            {% endif %}
         </div>
     </div>
 
