@@ -27,22 +27,19 @@ def home():
 @main.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    # Verifica se o usuário é admin e redireciona para o painel correto
-    if current_user.is_admin:
-        return redirect(url_for('main.admin_dashboard'))
+    """
+    Exibe o painel de controle para usuários comuns.
+    Admins podem salvar palavras-chave e depois são redirecionados para o painel administrativo.
+    """
 
-    # Lógica para salvar palavras-chave
+    # Se o método for POST, salva as palavras-chave
     if request.method == 'POST':
-        # Adicionar prints para depuração
-        print("Método POST detectado")
         keywords_input = request.form.get('keyword')
-        print(f"Palavras recebidas: {keywords_input}")
-
         if keywords_input:
+            # Processa as palavras-chave inseridas
             keywords_list = [keyword.strip() for keyword in keywords_input.split(',') if keyword.strip()]
-            print(f"Palavras processadas: {keywords_list}")
-
             for keyword in keywords_list:
+                # Verifica se a palavra-chave já existe para o usuário
                 existing_keyword = Keyword.query.filter_by(keyword=keyword, user_id=current_user.id).first()
                 if not existing_keyword:
                     new_keyword = Keyword(keyword=keyword, user_id=current_user.id)
@@ -50,19 +47,20 @@ def dashboard():
 
         try:
             db.session.commit()
-            print("Palavras-chave salvas com sucesso!")
             flash('Palavras-chave salvas com sucesso!', 'success')
         except Exception as e:
             db.session.rollback()
-            print(f"Erro ao salvar palavras-chave: {e}")
-            flash('Erro ao salvar suas palavras-chave.', 'danger')
+            flash(f'Erro ao salvar as palavras-chave: {e}', 'danger')
 
-        return redirect(url_for('main.dashboard'))
+    # Se o usuário for admin, redireciona para o painel admin depois de salvar as palavras-chave
+    if current_user.is_admin:
+        return redirect(url_for('main.admin_dashboard'))
 
     # Exibe as palavras-chave associadas ao usuário atual
     keywords = Keyword.query.filter_by(user_id=current_user.id).all()
-    return render_template('dashboard.html', keywords=keywords)
 
+    # Renderiza o dashboard normal para usuários comuns
+    return render_template('dashboard.html', keywords=keywords)
 
 
 @main.route('/admin', methods=['GET', 'POST'])
@@ -70,34 +68,14 @@ def dashboard():
 @admin_required
 def admin_dashboard():
     """
-    Painel administrativo para gerenciar usuários e palavras-chave.
+    Painel administrativo para gerenciar usuários.
     """
-    # Processa o POST das palavras-chave
-    if request.method == 'POST':
-        keywords_input = request.form.get('keyword')
-        print(f"Palavras recebidas no admin: {keywords_input}")
 
-        if keywords_input:
-            keywords_list = [keyword.strip() for keyword in keywords_input.split(',') if keyword.strip()]
-            print(f"Palavras processadas no admin: {keywords_list}")
-
-            for keyword in keywords_list:
-                existing_keyword = Keyword.query.filter_by(keyword=keyword, user_id=current_user.id).first()
-                if not existing_keyword:
-                    new_keyword = Keyword(keyword=keyword, user_id=current_user.id)
-                    db.session.add(new_keyword)
-
-        try:
-            db.session.commit()
-            flash('Palavras-chave salvas com sucesso!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            print(f"Erro ao salvar as palavras-chave no admin: {e}")
-            flash(f'Erro ao salvar palavras-chave: {e}', 'danger')
-
-    # Pega todos os usuários e palavras-chave para o admin gerenciar
+    # Pega todos os usuários para o admin gerenciar
     users = User.query.all()
-    keywords = Keyword.query.filter_by(user_id=current_user.id).all()  # Adiciona essa linha
+
+    # Exibe também as palavras-chave associadas ao administrador
+    keywords = Keyword.query.filter_by(user_id=current_user.id).all()
 
     return render_template('admin.html', users=users, keywords=keywords)
 
@@ -190,13 +168,12 @@ def stop_bot():
 def remove_keyword(keyword_id):
     keyword = Keyword.query.get_or_404(keyword_id)
     if keyword.user_id != current_user.id:
-        flash('Você não tem permissão para remover esta palavra-chave.', 'danger')
-        return redirect(url_for('main.dashboard'))
-    
+        return jsonify({'status': 'error', 'message': 'Permissão negada'}), 403
+
     db.session.delete(keyword)
     db.session.commit()
-    flash('Palavra-chave removida com sucesso!', 'success')
-    return redirect(url_for('main.dashboard'))
+    return jsonify({'status': 'success', 'message': 'Palavra-chave removida com sucesso!'})
+
 
 # Rota para tornar ou remover administrador
 @main.route('/admin/toggle_admin/<int:user_id>', methods=['POST'])

@@ -49,14 +49,14 @@
         <h3 class="mt-5">Suas Palavras-Chave:</h3>
         {% if keywords %}
         <div>
-        {% for keyword in keywords %}
-            <div class="keyword-chip">
-                {{ keyword.keyword }}
-                <form action="{{ url_for('main.remove_keyword', keyword_id=keyword.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" aria-label="Remover">&times;</button>
-                </form>
-            </div>
-        {% endfor %}
+            {% for keyword in keywords %}
+                <div class="keyword-chip">
+                    {{ keyword.keyword }}
+                    <form action="{{ url_for('main.remove_keyword', keyword_id=keyword.id) }}" method="POST" class="remove-keyword-form" style="display:inline;">
+                        <button type="submit" class="remove-keyword-btn" data-keyword-id="{{ keyword.id }}" aria-label="Remover">&times;</button>
+                    </form>                    
+                </div>
+            {% endfor %}
         </div>
         {% else %}
         <p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
@@ -74,6 +74,11 @@
                 </div>
             {% endif %}
         {% endwith %}
+        
+        <!-- Bloco reservado para conteúdo de administrador -->
+        {% block admin_content %}
+        <!-- Conteúdo para administradores vai aqui -->
+        {% endblock %}
     </div>
 
     <!-- Rodapé -->

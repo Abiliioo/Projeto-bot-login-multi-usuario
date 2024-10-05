@@ -32,63 +32,20 @@
                 {% endif %}
             </td>
             <td>
-                <!-- Ação de alternar status de administrador -->
-                <form action="{{ url_for('main.toggle_admin', user_id=user.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-warning btn-sm">
-                        {% if user.is_admin %}
-                            Remover Admin
-                        {% else %}
-                            Tornar Admin
-                        {% endif %}
-                    </button>
-                </form>
-
-                <!-- Redefinir senha -->
-                <form action="{{ url_for('main.reset_password', user_id=user.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-info btn-sm">Redefinir Senha</button>
-                </form>
-
-                <!-- Alterar e-mail -->
-                <form action="{{ url_for('main.edit_email', user_id=user.id) }}" method="POST" style="display:inline;">
-                    <input type="email" name="new_email" placeholder="Novo e-mail" required class="form-control-sm">
-                    <button type="submit" class="btn btn-secondary btn-sm">Alterar E-mail</button>
-                </form>
-
-                <!-- Liberar acesso -->
-                <form action="{{ url_for('main.grant_access', user_id=user.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-success btn-sm">Liberar Acesso</button>
-                </form>
+                <a href="{{ url_for('main.toggle_admin', user_id=user.id) }}" class="btn btn-warning btn-sm">
+                    {% if user.is_admin %}
+                        Remover Admin
+                    {% else %}
+                        Tornar Admin
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('main.reset_password', user_id=user.id) }}" class="btn btn-info btn-sm">Redefinir Senha</a>
+                <a href="{{ url_for('main.edit_email', user_id=user.id) }}" class="btn btn-secondary btn-sm">Alterar E-mail</a>
+                <a href="{{ url_for('main.grant_access', user_id=user.id) }}" class="btn btn-success btn-sm">Liberar Acesso</a>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
-<!-- Formulário para adicionar palavras-chave -->
-<h2 class="mt-5">Adicionar Palavras-Chave (Admin)</h2>
-<form action="{{ url_for('main.admin_dashboard') }}" method="POST">
-    <div class="form-group">
-        <label for="keyword">Palavras-chave (separadas por vírgula):</label>
-        <input type="text" class="form-control" id="keyword" name="keyword" placeholder="ex: excel, vba, python" required>
-    </div>
-    <button type="submit" class="btn btn-success">Salvar Palavras-Chave</button>
-</form>
-
-<!-- Exibe as palavras-chave já cadastradas como "chips" -->
-<h3 class="mt-5">Palavras-Chave Adicionadas</h3>
-{% if keywords %}
-<div>
-    {% for keyword in keywords %}
-        <div class="keyword-chip">
-            {{ keyword.keyword }}
-            <form action="{{ url_for('main.remove_keyword', keyword_id=keyword.id) }}" method="POST" style="display:inline;">
-                <button type="submit" aria-label="Remover">&times;</button>
-            </form>
-        </div>
-    {% endfor %}
-</div>
-{% else %}
-<p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
-{% endif %}
 
 {% endblock %}
