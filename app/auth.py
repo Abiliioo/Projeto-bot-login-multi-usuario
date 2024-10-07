@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_user, logout_user, login_required, current_user
+from flask_login import login_user, logout_user, login_required
 from .models import User
 from . import db
+from .forms import LoginForm, RegistrationForm
 
 auth = Blueprint('auth', __name__)
 
@@ -10,9 +11,10 @@ def login():
     """
     Rota de login, onde o usuário pode se autenticar
     """
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()  # Usando o formulário centralizado
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
 
         # Verifica se o usuário existe no banco de dados
         user = User.query.filter_by(username=username).first()
@@ -27,7 +29,7 @@ def login():
         else:
             flash('Nome de usuário ou senha incorretos.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @auth.route('/logout')
 @login_required
@@ -44,10 +46,11 @@ def register():
     """
     Rota de registro, onde novos usuários podem se cadastrar
     """
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        phone_number = request.form.get('phone_number')
+    form = RegistrationForm()  # Usando o formulário centralizado
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        phone_number = form.phone_number.data
 
         # Verifica se o nome de usuário já existe
         existing_user = User.query.filter_by(username=username).first()
@@ -74,4 +77,4 @@ def register():
             db.session.rollback()
             flash(f'Ocorreu um erro ao realizar o cadastro: {e}', 'danger')
 
-    return render_template('register.html')
+    return render_template('register.html', form=form)

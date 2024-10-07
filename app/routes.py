@@ -117,14 +117,18 @@ def register():
     return render_template('register.html', form=form)
 
 
+from .forms import LoginForm  # Importa o formulário de login
+
 @main.route('/login', methods=['GET', 'POST'])
 def login():
     """
     Rota de login do usuário
     """
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()  # Cria uma instância do formulário de login
+
+    if form.validate_on_submit():  # Verifica se o formulário foi validado corretamente
+        username = form.username.data
+        password = form.password.data
 
         # Verifica se o usuário existe
         user = User.query.filter_by(username=username).first()
@@ -135,7 +139,8 @@ def login():
         else:
             flash('Nome de usuário ou senha incorretos.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)  # Passa o formulário para o template
+
 
 
 # Controle do bot: Iniciar e parar bot
