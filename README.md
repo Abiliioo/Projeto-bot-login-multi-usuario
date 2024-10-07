@@ -63,9 +63,9 @@ Este projeto segue o modelo Simplified GitFlow, ideal para organização e contr
 - **Mesclar em master e develop**:
 
     ```bash
-    git checkout master
+    git checkout main
     git merge release/x.y.z
-    git push origin master
+    git push origin main
 
     git checkout develop
     git merge release/x.y.z
@@ -93,9 +93,9 @@ Este projeto segue o modelo Simplified GitFlow, ideal para organização e contr
 - **Mesclar em master e develop**:
 
     ```bash
-    git checkout master
+    git checkout main
     git merge hotfix/nome-do-hotfix
-    git push origin master
+    git push origin main
 
     git tag -a vX.Y.Z+1 -m "Hotfix: Descrição"
     git push origin vX.Y.Z+1
