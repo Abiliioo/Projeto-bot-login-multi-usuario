@@ -1,9 +1,8 @@
 from alembic import op
 import sqlalchemy as sa
 
-# Revisão identificadora e referências (garanta que os IDs sejam únicos)
 revision = 'adiciona_coluna_password_hash'
-down_revision = 'af71a703a667'  # Coloque o ID da última migração aqui
+down_revision = 'af71a703a667'  # Certifique-se de que este valor é o correto
 branch_labels = None
 depends_on = None
 
