@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     phone_number = db.Column(db.String(20), nullable=True)
     password_hash = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    is_subscriber = db.Column(db.Boolean, default=False)  # Novo campo para status de assinante
     chat_id = db.Column(db.String(50), nullable=True)
     keywords = db.relationship('Keyword', backref='user', lazy=True, cascade="all, delete-orphan")
 
@@ -30,6 +31,7 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<User {self.username}>'
+
 
 
 class Keyword(db.Model):

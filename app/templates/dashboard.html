@@ -16,6 +16,19 @@
             <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
         </div>
 
+            <!-- Mensagens de sucesso/erro -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mt-4  text-center">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} d-inline-block" role="alert"> <!-- Classe d-inline-block adicionada -->
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
         <!-- Seção para exibir o Chat ID do usuário -->
         <h2 class="mt-5">Seu Chat ID do Telegram</h2>
         {% if current_user.chat_id %}
@@ -61,19 +74,6 @@
         {% else %}
         <p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
         {% endif %}
-
-        <!-- Mensagens de sucesso/erro -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mt-4">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
         
         <!-- Bloco reservado para conteúdo de administrador -->
         {% block admin_content %}

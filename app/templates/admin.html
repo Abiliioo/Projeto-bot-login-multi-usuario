@@ -41,7 +41,10 @@
                 </a>
                 <a href="{{ url_for('main.reset_password', user_id=user.id) }}" class="btn btn-info btn-sm">Redefinir Senha</a>
                 <a href="{{ url_for('main.edit_email', user_id=user.id) }}" class="btn btn-secondary btn-sm">Alterar E-mail</a>
-                <a href="{{ url_for('main.grant_access', user_id=user.id) }}" class="btn btn-success btn-sm">Liberar Acesso</a>
+                <form action="{{ url_for('main.grant_access', user_id=user.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-success btn-sm">Liberar Acesso</button>
+                </form>
+                
             </td>
         </tr>
         {% endfor %}
