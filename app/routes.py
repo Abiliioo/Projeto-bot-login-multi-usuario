@@ -11,7 +11,7 @@ from .bot import VerificadorDeProjetos  # Importando a classe do bot
 # Definindo o blueprint "main"
 main = Blueprint('main', __name__)
 
-# Inicialização do bot
+# Inicialização global do bot (uma instância global para manter o estado)
 verificador = VerificadorDeProjetos()
 
 # Carrega o token do bot a partir do arquivo .env
@@ -31,7 +31,6 @@ def dashboard():
     Exibe o painel de controle para usuários comuns.
     Admins podem salvar palavras-chave e depois são redirecionados para o painel administrativo.
     """
-
     # Se o método for POST, salva as palavras-chave
     if request.method == 'POST':
         keywords_input = request.form.get('keyword')
@@ -62,7 +61,6 @@ def dashboard():
     # Renderiza o dashboard normal para usuários comuns
     return render_template('dashboard.html', keywords=keywords)
 
-
 @main.route('/admin', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -70,7 +68,6 @@ def admin_dashboard():
     """
     Painel administrativo para gerenciar usuários.
     """
-
     # Pega todos os usuários para o admin gerenciar
     users = User.query.all()
 
@@ -78,7 +75,6 @@ def admin_dashboard():
     keywords = Keyword.query.filter_by(user_id=current_user.id).all()
 
     return render_template('admin.html', users=users, keywords=keywords)
-
 
 @main.route('/cadastro', methods=['GET', 'POST'])
 def register():
@@ -116,7 +112,6 @@ def register():
 
     return render_template('register.html', form=form)
 
-
 from .forms import LoginForm  # Importa o formulário de login
 
 @main.route('/login', methods=['GET', 'POST'])
@@ -124,13 +119,12 @@ def login():
     """
     Rota de login do usuário
     """
-    form = LoginForm()  # Cria uma instância do formulário de login
+    form = LoginForm()
 
-    if form.validate_on_submit():  # Verifica se o formulário foi validado corretamente
+    if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
 
-        # Verifica se o usuário existe
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             login_user(user)
@@ -139,33 +133,42 @@ def login():
         else:
             flash('Nome de usuário ou senha incorretos.', 'danger')
 
-    return render_template('login.html', form=form)  # Passa o formulário para o template
-
+    return render_template('login.html', form=form)
 
 
 # Controle do bot: Iniciar e parar bot
 @main.route('/start_bot', methods=['POST'])
 @login_required
 def start_bot():
-    """
-    Inicia o bot de verificação de projetos
-    """
-    # Obtendo palavras-chave do usuário
-    keywords = [kw.keyword for kw in Keyword.query.filter_by(user_id=current_user.id).all()]
-    if current_user.chat_id and TELEGRAM_TOKEN:
-        verificador.iniciar_verificacao(10, keywords, TELEGRAM_TOKEN, current_user.chat_id)
-        return jsonify({"status": "Bot iniciado com sucesso."})
-    else:
-        return jsonify({"status": "Chat ID ou token do bot não encontrado. Inicie a conversa com o bot ou verifique o token."})
+    if not current_user.is_subscriber:
+        return jsonify({'status': 'Erro: Apenas assinantes podem iniciar o bot.'}), 403
+
+    total_pages = 10  # Número de páginas a verificar
+    keywords = [kw.keyword for kw in current_user.keywords]  # Palavras-chave do usuário
+    bot_token = TELEGRAM_TOKEN
+    chat_id = current_user.chat_id
+
+    if not chat_id:
+        return jsonify({'status': 'Erro: Você precisa primeiro interagir com o bot no Telegram para vincular seu Chat ID.'}), 400
+
+    # Inicia o bot (usando a instância global)
+    verificador.iniciar_verificacao(total_pages, keywords, bot_token, chat_id)
+
+    return jsonify({'status': 'Bot iniciado com sucesso!'})
 
 @main.route('/stop_bot', methods=['POST'])
 @login_required
 def stop_bot():
-    """
-    Para o bot de verificação de projetos
-    """
     verificador.parar_verificacao()
     return jsonify({"status": "Bot parado com sucesso."})
+
+@main.route('/status_bot', methods=['GET'])
+def status_bot():
+    """
+    Rota para verificar o status do bot
+    """
+    return jsonify({'status': verificador.status_bot()})
+
 
 # Rota para remover uma palavra-chave
 @main.route('/remove_keyword/<int:keyword_id>', methods=['POST'])
@@ -178,7 +181,6 @@ def remove_keyword(keyword_id):
     db.session.delete(keyword)
     db.session.commit()
     return jsonify({'status': 'success', 'message': 'Palavra-chave removida com sucesso!'})
-
 
 # Rota para tornar ou remover administrador
 @main.route('/admin/toggle_admin/<int:user_id>', methods=['POST'])

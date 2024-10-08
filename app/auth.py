@@ -69,12 +69,12 @@ def register():
             db.session.add(new_user)
             db.session.commit()
 
-            login_user(new_user)
-            flash('Cadastro realizado com sucesso!', 'success')
-            return redirect(url_for('main.dashboard'))
+            flash('Cadastro realizado com sucesso! Faça login.', 'success')
+            return redirect(url_for('auth.login'))  # Redireciona para a página de login
 
         except Exception as e:
             db.session.rollback()
             flash(f'Ocorreu um erro ao realizar o cadastro: {e}', 'danger')
 
     return render_template('register.html', form=form)
+

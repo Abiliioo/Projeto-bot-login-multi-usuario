@@ -3,15 +3,10 @@ import json
 import random
 from datetime import datetime
 from lxml import html
-import requests
 import asyncio
 import aiohttp
-from flask import Flask, request, jsonify  # Importações necessárias
-from .models import User  # Importa o modelo User para verificar assinantes
+from .models import User
 from . import db
-
-# Criação da instância do Flask
-app = Flask(__name__)
 
 # Constantes e Configurações
 URL_BASE = "https://www.99freelas.com.br/projects?page="
@@ -20,12 +15,14 @@ INTERVALO_MIN = 2 * 60  # 2 minutos
 INTERVALO_MAX = 5 * 60  # 5 minutos
 ARQUIVO_PROJETOS = 'projetos_enviados.json'
 
+
 class VerificadorDeProjetos:
     def __init__(self):
         self.deve_continuar = False
         self.projetos_enviados = self.carregar_projetos_enviados()
         self.logs = []  # Armazena logs
         self.thread = None
+        self.bot_ativo = False  # Adicionando um estado para o status do bot
 
     def carregar_projetos_enviados(self):
         """
@@ -134,6 +131,7 @@ class VerificadorDeProjetos:
         Inicia a verificação em uma thread separada.
         """
         self.deve_continuar = True
+        self.bot_ativo = True  # Define o bot como ativo
         if self.thread is None or not self.thread.is_alive():
             self.thread = threading.Thread(target=self.run_schedule, args=(total_pages, keywords, bot_token, chat_id))
             self.thread.start()
@@ -143,21 +141,12 @@ class VerificadorDeProjetos:
         Para a verificação.
         """
         self.deve_continuar = False
+        self.bot_ativo = False  # Define o bot como inativo
         if self.thread:
             self.thread.join()
 
-
-# Webhook para interações do bot com o usuário
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    data = request.json
-    if "message" in data:
-        chat_id = data['message']['chat']['id']
-        phone_number = data['message'].get('contact', {}).get('phone_number')  # Obtém o número de telefone se disponível
-
-        verificador = VerificadorDeProjetos()
-        if asyncio.run(verificador.verificar_e_salvar_chat_id(phone_number, chat_id)):
-            return jsonify({"status": "Chat ID salvo com sucesso para o assinante."})
-        else:
-            return jsonify({"status": "Usuário não é assinante."})
-    return jsonify({"status": "Erro: Nenhuma mensagem encontrada."})
+    def status_bot(self):
+        """
+        Retorna o status do bot (ativo ou inativo).
+        """
+        return 'Ativo' if self.bot_ativo else 'Verificação não iniciada'
