@@ -1,9 +1,8 @@
 import os  # Importando o módulo os para ler o arquivo .env
 from flask import render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user, login_user
+from flask_login import login_required, current_user
 from .models import Keyword, User
 from . import db
-from .forms import RegistrationForm
 from flask import Blueprint
 from .decorators import admin_required
 from .bot import VerificadorDeProjetos  # Importando a classe do bot
@@ -31,14 +30,11 @@ def dashboard():
     Exibe o painel de controle para usuários comuns.
     Admins podem salvar palavras-chave e depois são redirecionados para o painel administrativo.
     """
-    # Se o método for POST, salva as palavras-chave
     if request.method == 'POST':
         keywords_input = request.form.get('keyword')
         if keywords_input:
-            # Processa as palavras-chave inseridas
             keywords_list = [keyword.strip() for keyword in keywords_input.split(',') if keyword.strip()]
             for keyword in keywords_list:
-                # Verifica se a palavra-chave já existe para o usuário
                 existing_keyword = Keyword.query.filter_by(keyword=keyword, user_id=current_user.id).first()
                 if not existing_keyword:
                     new_keyword = Keyword(keyword=keyword, user_id=current_user.id)
@@ -51,90 +47,20 @@ def dashboard():
             db.session.rollback()
             flash(f'Erro ao salvar as palavras-chave: {e}', 'danger')
 
-    # Se o usuário for admin, redireciona para o painel admin depois de salvar as palavras-chave
     if current_user.is_admin:
         return redirect(url_for('main.admin_dashboard'))
 
-    # Exibe as palavras-chave associadas ao usuário atual
     keywords = Keyword.query.filter_by(user_id=current_user.id).all()
 
-    # Renderiza o dashboard normal para usuários comuns
     return render_template('dashboard.html', keywords=keywords)
 
 @main.route('/admin', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_dashboard():
-    """
-    Painel administrativo para gerenciar usuários.
-    """
-    # Pega todos os usuários para o admin gerenciar
     users = User.query.all()
-
-    # Exibe também as palavras-chave associadas ao administrador
     keywords = Keyword.query.filter_by(user_id=current_user.id).all()
-
     return render_template('admin.html', users=users, keywords=keywords)
-
-@main.route('/cadastro', methods=['GET', 'POST'])
-def register():
-    form = RegistrationForm()
-
-    if form.validate_on_submit():
-        username = form.username.data
-        email = form.email.data
-        password = form.password.data
-        phone_number = form.phone_number.data
-        is_admin = form.is_admin.data  # Coleta o status de administrador
-
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
-            flash('Nome de usuário já existe. Tente outro.', 'danger')
-            return redirect(url_for('main.register'))
-
-        try:
-            # Certifica-se de que o telefone tem o código do país "55"
-            if phone_number and not phone_number.startswith('55'):
-                phone_number = '55' + phone_number
-
-            new_user = User(username=username, email=email, phone_number=phone_number, is_admin=is_admin)
-            new_user.set_password(password)
-            db.session.add(new_user)
-            db.session.commit()
-
-            login_user(new_user)
-            flash('Cadastro realizado com sucesso!', 'success')
-            return redirect(url_for('main.dashboard'))
-
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Ocorreu um erro ao realizar o cadastro: {e}', 'danger')
-
-    return render_template('register.html', form=form)
-
-from .forms import LoginForm  # Importa o formulário de login
-
-@main.route('/login', methods=['GET', 'POST'])
-def login():
-    """
-    Rota de login do usuário
-    """
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            login_user(user)
-            flash('Login realizado com sucesso!', 'success')
-            return redirect(url_for('main.dashboard'))
-        else:
-            flash('Nome de usuário ou senha incorretos.', 'danger')
-
-    return render_template('login.html', form=form)
-
 
 # Controle do bot: Iniciar e parar bot
 @main.route('/start_bot', methods=['POST'])
@@ -143,17 +69,15 @@ def start_bot():
     if not current_user.is_subscriber:
         return jsonify({'status': 'Erro: Apenas assinantes podem iniciar o bot.'}), 403
 
-    total_pages = 10  # Número de páginas a verificar
-    keywords = [kw.keyword for kw in current_user.keywords]  # Palavras-chave do usuário
+    total_pages = 10
+    keywords = [kw.keyword for kw in current_user.keywords]
     bot_token = TELEGRAM_TOKEN
     chat_id = current_user.chat_id
 
     if not chat_id:
         return jsonify({'status': 'Erro: Você precisa primeiro interagir com o bot no Telegram para vincular seu Chat ID.'}), 400
 
-    # Inicia o bot (usando a instância global)
     verificador.iniciar_verificacao(total_pages, keywords, bot_token, chat_id)
-
     return jsonify({'status': 'Bot iniciado com sucesso!'})
 
 @main.route('/stop_bot', methods=['POST'])
@@ -164,13 +88,8 @@ def stop_bot():
 
 @main.route('/status_bot', methods=['GET'])
 def status_bot():
-    """
-    Rota para verificar o status do bot
-    """
     return jsonify({'status': verificador.status_bot()})
 
-
-# Rota para remover uma palavra-chave
 @main.route('/remove_keyword/<int:keyword_id>', methods=['POST'])
 @login_required
 def remove_keyword(keyword_id):
@@ -203,7 +122,7 @@ def toggle_admin(user_id):
 @admin_required
 def reset_password(user_id):
     user = User.query.get_or_404(user_id)
-    new_password = 'defaultpassword'  # Defina uma senha padrão ou gere aleatoriamente
+    new_password = 'defaultpassword'
     user.set_password(new_password)
     db.session.commit()
     flash(f'A senha de {user.username} foi redefinida para: {new_password}', 'success')
@@ -231,7 +150,7 @@ def edit_email(user_id):
 @admin_required
 def grant_access(user_id):
     user = User.query.get_or_404(user_id)
-    user.is_subscriber = True  # Aqui você pode marcar o usuário como assinante
+    user.is_subscriber = True
     db.session.commit()
     flash(f'Acesso liberado para o usuário {user.username}!', 'success')
     return redirect(url_for('main.admin_dashboard'))
