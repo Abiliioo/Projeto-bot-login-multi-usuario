@@ -22,7 +22,7 @@
             <p>Bem-vindo de volta, {{ current_user.username }}!</p>
             <a href="{{ url_for('main.dashboard') }}" class="btn btn-light btn-lg mt-3">Ir para o Dashboard</a> <!-- Alterado para btn-light -->
         {% else %}
-            <a href="{{ url_for('main.register') }}" class="btn btn-custom btn-lg">Cadastre-se Agora</a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-custom btn-lg">Cadastre-se Agora</a>
         {% endif %}
     </div>
 
