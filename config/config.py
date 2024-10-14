@@ -5,16 +5,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
+    SECRET_KEY = os.getenv('SECRET_KEY') or os.urandom(24)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    @staticmethod
+    def init_app(app):
+        """Configurações adicionais de inicialização."""
+        pass
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///app.db')  # Usando SQLite para desenvolvimento
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///app.db')
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://user:password@localhost/dbname')  # Produção usa PostgreSQL
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    
+    # Ajusta a URI para ser compatível com SQLAlchemy
+    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://")
 
 class TestingConfig(Config):
     TESTING = True

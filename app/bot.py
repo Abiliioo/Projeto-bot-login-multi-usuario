@@ -1,11 +1,10 @@
 import threading
-import json
 import random
-from datetime import datetime
+from flask_login import current_user  # Importando current_user
 from lxml import html
 import asyncio
 import aiohttp
-from .models import User
+from .models import User, Project
 from . import db
 
 # Constantes e Configurações
@@ -13,39 +12,14 @@ URL_BASE = "https://www.99freelas.com.br/projects?page="
 MENSAGEM_BASE = "Os seguintes projetos foram encontrados:\n\n"
 INTERVALO_MIN = 2 * 60  # 2 minutos
 INTERVALO_MAX = 5 * 60  # 5 minutos
-ARQUIVO_PROJETOS = 'projetos_enviados.json'
 
 
 class VerificadorDeProjetos:
     def __init__(self):
         self.deve_continuar = False
-        self.projetos_enviados = self.carregar_projetos_enviados()
         self.logs = []  # Armazena logs
         self.thread = None
-        self.bot_ativo = False  # Adicionando um estado para o status do bot
-
-    def carregar_projetos_enviados(self):
-        """
-        Carrega os projetos já enviados de um arquivo JSON para evitar duplicidade.
-        """
-        try:
-            with open(ARQUIVO_PROJETOS, 'r', encoding='utf-8') as json_file:
-                return set(json.load(json_file))
-        except FileNotFoundError:
-            return set()
-        except Exception as e:
-            self.logs.append(f"Erro ao carregar projetos enviados: {e}")
-            return set()
-
-    def salvar_projetos_enviados(self):
-        """
-        Salva os projetos já enviados em um arquivo JSON.
-        """
-        try:
-            with open(ARQUIVO_PROJETOS, 'w', encoding='utf-8') as json_file:
-                json.dump(list(self.projetos_enviados), json_file, ensure_ascii=False)
-        except Exception as e:
-            self.logs.append(f"Erro ao salvar projetos enviados: {e}")
+        self.bot_ativo = False  # Estado do bot
 
     async def obter_titulos_links_projetos(self, page, session):
         """
@@ -85,20 +59,6 @@ class VerificadorDeProjetos:
                 self.logs.append(f"Erro ao enviar mensagem: {e}")
                 return None
 
-    async def verificar_e_salvar_chat_id(self, phone_number, chat_id):
-        """
-        Verifica se o número de telefone é de um assinante e salva o chat_id.
-        """
-        user = User.query.filter_by(phone_number=phone_number, is_subscriber=True).first()
-        if user:
-            user.chat_id = chat_id
-            db.session.commit()
-            self.logs.append(f"Chat ID salvo para o assinante: {user.username}")
-            return True
-        else:
-            self.logs.append(f"Usuário com telefone {phone_number} não é assinante.")
-            return False
-
     async def executar_verificacao(self, total_pages, keywords, bot_token, chat_id):
         """
         Executa a verificação dos projetos em várias páginas e envia notificações.
@@ -108,13 +68,18 @@ class VerificadorDeProjetos:
             for current_page in range(1, total_pages + 1):
                 titulos_links = await self.obter_titulos_links_projetos(current_page, session)
                 for titulo, link in titulos_links:
-                    if self.projeto_corresponde(titulo, keywords) and link not in self.projetos_enviados:
+                    projeto_existente = Project.query.filter_by(link=link, user_id=current_user.id).first()
+                    
+                    if self.projeto_corresponde(titulo, keywords) and not projeto_existente:
+                        # Salvar no banco de dados
+                        novo_projeto = Project(title=titulo, link=link, user_id=current_user.id)
+                        db.session.add(novo_projeto)
+                        db.session.commit()
+
                         mensagem_final = f"{MENSAGEM_BASE}{titulo}\n\nLink do projeto: https://www.99freelas.com.br{link}\n\n"
-                        self.projetos_enviados.add(link)
                         self.logs.append(f"Projeto encontrado: {titulo}")
                         await self.enviar_mensagem_telegram(mensagem_final, bot_token, chat_id)
 
-        self.salvar_projetos_enviados()
         self.logs.append("Verificação concluída.")
 
     def run_schedule(self, total_pages, keywords, bot_token, chat_id):
@@ -150,3 +115,10 @@ class VerificadorDeProjetos:
         Retorna o status do bot (ativo ou inativo).
         """
         return 'Ativo' if self.bot_ativo else 'Verificação não iniciada'
+
+    @staticmethod
+    def limpar_projetos_antigos():
+        """
+        Chama o método estático para excluir projetos mais antigos que 12 horas.
+        """
+        Project.delete_old_projects()
