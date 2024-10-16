@@ -1,59 +1,130 @@
+/* Estilos Gerais */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f8f8;
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa; /* Fundo neutro */
 }
 
-.hero {
-    background-color: #007bff;
+/* Caixa principal */
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo para a Navbar */
+.navbar {
+    background-color: #343a40; /* Bootstrap usa essa cor por padrão para navbar-dark */
+}
+
+.navbar-brand {
     color: white;
-    padding: 100px 0;
-    text-align: center;
 }
 
-.hero h1 {
-    font-size: 3rem;
+.navbar-brand:hover {
+    color: #ffc107; /* Cor amarela destacada */
 }
 
-.hero p {
-    font-size: 1.2rem;
+/* Estilos para os Títulos */
+h1, h2, h3 {
+    color: #343a40;
+    margin-bottom: 20px;
 }
 
-.content {
-    padding: 50px 0;
-    text-align: center;
+h1 {
+    font-size: 2.5rem;
 }
 
+h2 {
+    font-size: 1.75rem;
+}
+
+/* Ícones alinhados com o texto */
+h2 i {
+    margin-right: 10px;
+    color: #343a40;
+}
+
+/* Botões - centralizar e espaçar */
+#start-bot-btn,
+#stop-bot-btn {
+    margin: 10px;
+    width: 150px; /* Largura consistente para ambos */
+    font-size: 1rem;
+}
+
+#status {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 10px;
+}
+
+/* Personalização dos botões */
 .btn-custom {
     background-color: #28a745;
     color: white;
 }
 
-/* Estilos para chips de palavras-chave */
+.btn-custom:hover {
+    background-color: #218838;
+}
+
+/* Estilo para as chips de palavras-chave */
 .keyword-chip {
     display: inline-block;
     padding: 0.5rem;
     margin: 0.3rem;
-    border: 1px solid #ccc;
-    border-radius: 0.25rem;
-    background-color: #f8f9fa;
+    color: white;
+    border-radius: 0.5rem;
+    background-color: #17a2b8;
     font-size: 0.9rem;
 }
 
 .keyword-chip button {
     background: none;
     border: none;
-    color: #dc3545;
+    color: #dc3545; /* Vermelho Bootstrap */
+    margin-left: 10px;
+    font-size: 16px;
     font-weight: bold;
-    margin-left: 0.5rem;
-}
-
-.keyword-chip button:hover {
-    color: #c82333;
     cursor: pointer;
 }
 
+.keyword-chip button:hover {
+    color: #c82333; /* Cor mais escura ao passar o mouse */
+}
+
+/* Estilos para Alertas */
+.alert {
+    display: inline-block;
+    margin: 10px 0;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Rodapé ajustado */
 footer {
-    background-color: #f1f1f1;
+    background-color: #f8f9fa;
     padding: 20px 0;
     text-align: center;
+    border-top: 1px solid #dee2e6;
+    color: #495057;
+    position: relative;
+    width: 100%;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer p a {
+    color: #ffc107;
+    text-decoration: none;
+}
+
+footer p a:hover {
+    text-decoration: underline;
 }

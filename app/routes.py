@@ -8,15 +8,23 @@ from flask import Blueprint
 from .decorators import admin_required
 from .bot import VerificadorDeProjetos
 from datetime import datetime
+import logging
 
 # Definindo o blueprint "main"
 main = Blueprint('main', __name__)
+
+# Configurando o logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Inicialização global do bot (uma instância global para manter o estado)
 verificador = VerificadorDeProjetos()
 
 # Carrega o token do bot a partir do arquivo .env
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+
+if not TELEGRAM_TOKEN:
+    logger.error("Erro: TELEGRAM_TOKEN não encontrado. Verifique o arquivo .env.")
 
 @main.route('/')
 def home():
@@ -57,6 +65,7 @@ def save_keywords(keywords_input):
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao salvar as palavras-chave: {e}', 'danger')
+        logger.error(f"Erro ao salvar palavras-chave: {e}")
 
 
 @main.route('/admin', methods=['GET', 'POST'])
@@ -71,24 +80,33 @@ def admin_dashboard():
 @main.route('/start_bot', methods=['POST'])
 @login_required
 def start_bot():
-    if not current_user.is_subscriber:
-        return jsonify({'status': 'Erro: Apenas assinantes podem iniciar o bot.'}), 403
-
-    total_pages = 10
-    keywords = [kw.keyword for kw in current_user.keywords]
-    bot_token = TELEGRAM_TOKEN
-    chat_id = current_user.chat_id
+    """
+    Rota para iniciar o bot.
+    """
+    logger.info(f"Iniciando bot para o usuário {current_user.username}")
+    total_pages = 5  # Número de páginas para verificar (exemplo)
+    keywords = [keyword.keyword for keyword in current_user.keywords]  # Palavras-chave do usuário atual
+    bot_token = TELEGRAM_TOKEN  # Carrega o token do bot
+    chat_id = current_user.chat_id  # ID do chat do Telegram do usuário
+    user_id = current_user.id  # ID do usuário atual
 
     if not chat_id:
-        return jsonify({'status': 'Erro: Você precisa primeiro interagir com o bot no Telegram para vincular seu Chat ID.'}), 400
+        logger.error(f"Usuário {current_user.username} não tem chat_id associado.")
+        return jsonify({'status': 'Chat ID não associado. Por favor, inicie o bot no Telegram com /start.'}), 400
 
-    verificador.iniciar_verificacao(total_pages, keywords, bot_token, chat_id)
-    return jsonify({'status': 'Bot iniciado com sucesso!'})
+    if not verificador.bot_ativo:
+        verificador.iniciar_verificacao(total_pages, keywords, bot_token, chat_id, user_id)
+        logger.info(f"Bot iniciado para o usuário {current_user.username}.")
+        return jsonify({'status': 'Bot iniciado com sucesso!'}), 200
+    else:
+        logger.info("Bot já está em execução.")
+        return jsonify({'status': 'Bot já está em execução.'}), 200
 
 @main.route('/stop_bot', methods=['POST'])
 @login_required
 def stop_bot():
     verificador.parar_verificacao()
+    logger.info(f"Bot parado para o usuário {current_user.username}.")
     return jsonify({"status": "Bot parado com sucesso."})
 
 @main.route('/status_bot', methods=['GET'])
@@ -108,6 +126,7 @@ def remove_keyword(keyword_id):
         return jsonify({'status': 'success', 'message': 'Palavra-chave removida com sucesso!'})
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Erro ao remover palavra-chave: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao remover palavra-chave: {e}'}), 500
 
 # Rota para tornar ou remover administrador
@@ -164,52 +183,57 @@ def grant_access(user_id):
     flash(f'Acesso liberado para o usuário {user.username}!', 'success')
     return redirect(url_for('main.admin_dashboard'))
 
+
 # Endpoint para receber mensagens via webhook do Telegram
 @main.route('/webhook/telegram', methods=['POST'])
 def telegram_webhook():
     """
-    Recebe mensagens do Telegram e captura o chat ID do usuário para armazená-lo no banco de dados
-    após a confirmação de que o número de telefone corresponde ao cadastrado.
+    Webhook do Telegram para capturar o chat ID e associá-lo ao usuário que ainda não tem chat_id,
+    apenas quando a mensagem é "/start".
     """
     data = request.get_json()
 
     if 'message' in data:
         message = data['message']
-        chat_id = message['chat']['id']  # Captura o chat ID
-        print(f"Mensagem recebida do chat ID: {chat_id}")
+        chat_id = message['chat']['id']
+        text = message.get('text', '')
 
-        # Quando o comando /start é enviado, solicitamos a confirmação do telefone
-        if message.get('text') == '/start':
-            # Buscando o usuário que está atualmente logado na plataforma, para confirmar com o Telegram
-            # Aqui devemos obter o telefone diretamente do banco de dados (ex: usuário atual).
-            user = User.query.filter_by(phone_number=current_user.phone_number).first() 
+        # Verificar se o comando é "/start"
+        if text == "/start":
+            logger.info(f"Comando /start recebido do chat ID: {chat_id}")
 
-            if user:
-                bot_token = os.getenv('TELEGRAM_TOKEN')
-                url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                payload = {
-                    'chat_id': chat_id,
-                    'text': f"O número de telefone cadastrado na plataforma é {user.phone_number}. Este é o seu telefone?",
-                    'reply_markup': {
-                        'keyboard': [['Sim', 'Não']],
-                        'one_time_keyboard': True
-                    }
-                }
-                requests.post(url, json=payload)
-                return jsonify({'status': 'success', 'message': 'Solicitação de confirmação de telefone enviada.'}), 200
-
-        # Se o usuário confirmar que o telefone está correto
-        if message.get('text') == 'Sim':
-            # Agora, confirmamos se o chat_id já está vazio para evitar duplicações
-            user = User.query.filter_by(phone_number=current_user.phone_number, chat_id=None).first()
+            # Encontrar o primeiro usuário sem chat_id associado
+            user = User.query.filter_by(chat_id=None).first()
 
             if user:
-                user.chat_id = chat_id  # Atribuir o chat ID ao usuário
+                # Associar o chat_id ao usuário
+                user.chat_id = chat_id
                 db.session.commit()
-                return jsonify({'status': 'success', 'message': f'Chat ID {chat_id} associado ao telefone {user.phone_number}.'}), 200
 
-        # Se o usuário disser que o número de telefone não está correto
-        if message.get('text') == 'Não':
-            return jsonify({'status': 'error', 'message': 'Por favor, atualize o número de telefone na plataforma.'}), 400
+                logger.info(f"Chat ID {chat_id} associado ao usuário {user.username}.")
 
-    return jsonify({'status': 'error', 'message': 'Mensagem inválida.'}), 400
+                # Enviar mensagem de confirmação
+                send_telegram_message(chat_id, "Seu chat ID foi associado com sucesso!")
+                return jsonify({"status": "Chat ID associado com sucesso"}), 200
+            else:
+                logger.warning("Nenhum usuário disponível para associação.")
+                send_telegram_message(chat_id, "Nenhum usuário disponível para associação.")
+                return jsonify({"status": "Nenhum usuário disponível para associação"}), 404
+
+    # Se não for "/start", retorna 200 sem fazer nada
+    return jsonify({"status": "Nenhuma ação realizada"}), 200
+
+
+def send_telegram_message(chat_id, text):
+    """
+    Função para enviar mensagem ao Telegram.
+    """
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code != 200:
+        logger.error(f"Erro ao enviar mensagem para o chat ID {chat_id}: {response.text}")
+    return response

@@ -10,14 +10,11 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False, index=True)
     email = db.Column(db.String(150), unique=True, nullable=False, index=True)
     phone_number = db.Column(db.String(20), nullable=True)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(512), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_subscriber = db.Column(db.Boolean, default=False)  # Campo para status de assinante
     chat_id = db.Column(db.String(50), nullable=True)
     keywords = db.relationship('Keyword', backref='user', lazy=True, cascade="all, delete-orphan")
-
-    # Novo campo para indicar que o usuário está confirmando o número de telefone
-    is_confirming = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):
         """Gera o hash da senha."""
@@ -38,12 +35,10 @@ class User(UserMixin, db.Model):
 
 
 class Keyword(db.Model):
-    __tablename__ = 'keywords'  # Define o nome explícito da tabela
+    __tablename__ = 'keywords'
 
     id = db.Column(db.Integer, primary_key=True)
     keyword = db.Column(db.String(50), nullable=False)
-    
-    # Chave estrangeira referenciando a tabela 'users'
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
@@ -60,14 +55,15 @@ class Keyword(db.Model):
         db.session.add(self)
         db.session.commit()
 
+
 class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)  # Título do projeto
-    link = db.Column(db.String(255), nullable=False)   # Link do projeto
-    date_added = db.Column(db.DateTime, default=datetime.now(timezone.utc))  # Data em que o projeto foi adicionado
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Relacionamento com o usuário
+    title = db.Column(db.String(255), nullable=False)
+    link = db.Column(db.String(255), nullable=False)
+    date_added = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # Garantindo que o fuso horário seja UTC
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
         return f'<Project {self.title}>'
@@ -75,10 +71,13 @@ class Project(db.Model):
     @staticmethod
     def delete_old_projects():
         """
-        Exclui projetos que foram adicionados há mais de 12 horas.
+        Exclui projetos que foram adicionados há mais de 12 horas de uma vez.
         """
         threshold_time = datetime.now(timezone.utc) - timedelta(hours=12)
-        old_projects = Project.query.filter(Project.date_added < threshold_time).all()
-        for project in old_projects:
-            db.session.delete(project)
+        Project.query.filter(Project.date_added < threshold_time).delete()
+        db.session.commit()
+
+    def save(self):
+        """Salva o projeto no banco de dados."""
+        db.session.add(self)
         db.session.commit()

@@ -8,7 +8,7 @@ import logging
 # Inicialização das extensões
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'main.login'
+login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Por favor, faça login para acessar esta página.'
 
 def create_app(config_name='production'): 

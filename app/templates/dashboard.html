@@ -6,87 +6,106 @@
     <title>Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Smart Bot Dashboard</a>
+        <div class="ml-auto">
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
     <div class="container mt-5">
         <h1 class="text-center">Bem-vindo ao Dashboard</h1>
 
-        <!-- Botão de logout -->
-        <div class="text-right">
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
-        </div>
-
-        <!-- Mensagens de sucesso/erro -->
+        <!-- Mensagens de Sucesso/Erro -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="mt-4 text-center">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} d-inline-block" role="alert"> <!-- Classe d-inline-block adicionada -->
-                        {{ message }}
-                    </div>
-                {% endfor %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
 
         <!-- Seção para exibir o Chat ID do usuário -->
-        <h2 class="mt-5">Seu Chat ID do Telegram</h2>
-        {% if current_user.chat_id %}
-            <p>Seu Chat ID é: <strong>{{ current_user.chat_id }}</strong></p>
-        {% else %}
-            <p>Você ainda não interagiu com o bot para registrar seu Chat ID.</p>
-            <p>Inicie uma conversa com nosso bot no Telegram clicando no link abaixo:</p>
-            <p><a href="https://t.me/O_Freela_bot" class="btn btn-primary" target="_blank">Iniciar conversa com o Bot</a></p>
-            <p>Após iniciar a conversa, o Chat ID será vinculado automaticamente ao seu perfil.</p>
-        {% endif %}
+        <div class="row mt-5">
+            <div class="col-md-6 text-center">
+                <h2><i class="fas fa-id-badge"></i> Seu Chat ID do Telegram</h2>
+                {% if current_user.chat_id %}
+                    <p>Seu Chat ID é: <strong>{{ current_user.chat_id }}</strong></p>
+                {% else %}
+                    <p>Você ainda não interagiu com o bot para registrar seu Chat ID.</p>
+                    <p>Inicie uma conversa com nosso bot no Telegram clicando no link abaixo e digite: <strong>/start</strong></p>
+                    <p><a href="https://t.me/O_Freela_bot" class="btn btn-primary" target="_blank">Iniciar conversa com o Bot</a></p>
+                    <p>Após iniciar a conversa, o Chat ID será vinculado automaticamente ao seu perfil.</p>
+                {% endif %}
+            </div>
 
-        <!-- Botões para iniciar e parar o bot -->
-        <h2 class="mt-5">Controle do Bot</h2>
-        <div class="mb-3">
-            <button class="btn btn-success" id="start-bot-btn">Iniciar Bot</button>
-            <button class="btn btn-danger" id="stop-bot-btn">Parar Bot</button>
+            <!-- Controle do Bot -->
+            <div class="col-md-6 text-center">
+                <h2><i class="fas fa-robot"></i> Controle do Bot</h2>
+                <div class="d-inline-block">
+                    <button class="btn btn-success mr-2" id="start-bot-btn"><i class="fas fa-play"></i> Iniciar Bot</button>
+                    <button class="btn btn-danger" id="stop-bot-btn"><i class="fas fa-stop"></i> Parar Bot</button>
+                </div>
+                <p id="status" class="mt-2">Status: Verificação não iniciada.</p>
+            </div>
         </div>
-        <p id="status">Status: Verificação não iniciada.</p>
 
-        <!-- Formulário para adicionar palavras-chave -->
-        <h2 class="mt-5">Adicionar Palavras-Chave</h2>
+
+        <!-- Formulário de Palavras-Chave -->
+        <h2 class="mt-5"><i class="fas fa-key"></i> Adicionar Palavras-Chave</h2>
         <form action="{{ url_for('main.dashboard') }}" method="POST">
             <div class="form-group">
                 <label for="keyword">Palavras-chave (separadas por vírgula):</label>
                 <input type="text" class="form-control" id="keyword" name="keyword" placeholder="ex: excel, vba, python" required>
             </div>
-            <button type="submit" class="btn btn-success">Salvar Palavras-Chave</button>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Salvar Palavras-Chave
+            </button>
         </form>
-        
-        <!-- Exibe as palavras-chave já cadastradas como "chips" -->
-        <h3 class="mt-5">Suas Palavras-Chave:</h3>
+
+        <!-- Exibição das Palavras-Chave -->
+        <h3 class="mt-5"><i class="fas fa-tags"></i> Suas Palavras-Chave:</h3>
         {% if keywords %}
-        <div>
-            {% for keyword in keywords %}
-                <div class="keyword-chip">
-                    {{ keyword.keyword }}
-                    <form action="{{ url_for('main.remove_keyword', keyword_id=keyword.id) }}" method="POST" class="remove-keyword-form" style="display:inline;">
-                        <button type="submit" class="remove-keyword-btn" data-keyword-id="{{ keyword.id }}" aria-label="Remover">&times;</button>
-                    </form>                    
-                </div>
-            {% endfor %}
-        </div>
+            <div>
+                {% for keyword in keywords %}
+                    <div class="keyword-chip">
+                        {{ keyword.keyword }}
+                        <form action="{{ url_for('main.remove_keyword', keyword_id=keyword.id) }}" method="POST" class="remove-keyword-form d-inline">
+                            <button type="submit" class="remove-keyword-btn" data-keyword-id="{{ keyword.id }}" aria-label="Remover">
+                                &times;
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
-        <p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
+            <p class="text-muted">Nenhuma palavra-chave cadastrada ainda.</p>
         {% endif %}
-        
-        <!-- Bloco reservado para conteúdo de administrador -->
+
+        <!-- Conteúdo do Admin -->
         {% block admin_content %}
-        <!-- Conteúdo para administradores vai aqui -->
         {% endblock %}
     </div>
 
     <!-- Rodapé -->
-    <footer class="mt-5 py-3 bg-light">
+    <footer class="mt-5 py-3">
         <div class="container text-center">
             <p>&copy; {{ current_year }} Smart Bot. Todos os direitos reservados.</p>
         </div>
     </footer>
+
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>

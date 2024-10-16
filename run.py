@@ -1,5 +1,5 @@
 import os
-from app import create_app
+from app import create_app, db
 from flask_apscheduler import APScheduler
 from datetime import datetime
 from app.models import Project
@@ -23,13 +23,15 @@ if env == 'development':
 # Inicializa o APScheduler
 scheduler = APScheduler()
 
-@scheduler.task('interval', minutes=10)
+@scheduler.task('interval', hours=12)
 def delete_old_projects_task():
     """
     Tarefa agendada para excluir projetos antigos a cada 12 horas.
+    Garantindo que o contexto de aplicação esteja ativo.
     """
-    Project.delete_old_projects()
-    print(f"[{datetime.now()}] Projetos antigos deletados com sucesso.")
+    with app.app_context():
+        Project.delete_old_projects()
+        print(f"[{datetime.now()}] Projetos antigos deletados com sucesso.")
 
 # Inicializa o agendamento no app Flask
 scheduler.init_app(app)
@@ -38,4 +40,3 @@ scheduler.start()
 if __name__ == '__main__':
     # Executa o aplicativo no modo debug apenas se o ambiente for 'development'
     app.run(debug=(env == 'development'))
-
