@@ -77,8 +77,8 @@ Este projeto segue o modelo Simplified GitFlow, ideal para organização e contr
 - **Criar tag**:
 
     ```bash
-    git tag -a vX.Y.Z -m "Versão X.Y.Z"
-    git push origin vX.Y.Z
+    git tag -a v1.0.0 -m "Versão X.Y.Z"
+    git push origin v1.0.0
 
 ## 6. Correção Rápida em Produção
 
