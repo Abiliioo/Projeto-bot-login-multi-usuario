@@ -128,3 +128,54 @@ footer p a {
 footer p a:hover {
     text-decoration: underline;
 }
+
+/* Estilos para a página de login */
+.login-container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
+    margin: 50px auto;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo img {
+    max-width: 150px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    border-radius: 5px;
+}
+
+.btn-primary {
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+.input-group-text {
+    background-color: transparent;
+    border-right: none;
+}
+
+.form-control {
+    border-left: none;
+}
+
+.input-group-text, .form-control {
+    border-radius: 10px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}

@@ -12,36 +12,100 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
-
-    <div class="hero">
-        <h1>Automatize suas Buscas de Projetos no 99Freelas</h1>
-        <p>Nosso bot verifica e envia os melhores projetos para você, baseado em palavras-chave personalizadas.</p>
-
-        <!-- Exibe o botão dependendo do status de autenticação -->
-        {% if current_user.is_authenticated %}
-            <p>Bem-vindo de volta, {{ current_user.username }}!</p>
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-light btn-lg mt-3">Ir para o Dashboard</a> <!-- Alterado para btn-light -->
-        {% else %}
-            <a href="{{ url_for('auth.register') }}" class="btn btn-custom btn-lg">Cadastre-se Agora</a>
-        {% endif %}
-    </div>
-
-    <div class="content">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <h2>Por que usar nosso serviço?</h2>
-            <p>Com nossa plataforma, você pode:</p>
-            <ul class="list-unstyled">
-                <li><i class="fas fa-check"></i> Receber notificações de novos projetos diretamente no Telegram.</li>
-                <li><i class="fas fa-check"></i> Personalizar palavras-chave para encontrar projetos relevantes.</li>
-                <li><i class="fas fa-check"></i> Automatizar a busca de projetos enquanto você foca no seu trabalho.</li>
-            </ul>
+            <a class="navbar-brand" href="#">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" height="30">
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#como-funciona">Como Funciona</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#vantagens">Vantagens</a>
+                    </li>
+                    {% if not current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-primary ml-2" href="{{ url_for('auth.login') }}">Login</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-primary ml-2" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-            <!-- Só mostra o botão de login se o usuário não estiver logado -->
-            {% if not current_user.is_authenticated %}
-                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg mt-3">Faça Login</a>
+    <header class="hero">
+        <div class="container text-center">
+            <h1 class="display-4">Automatize suas Buscas de Projetos no 99Freelas</h1>
+            <p class="lead">Nosso bot verifica e envia os melhores projetos para você, baseado em palavras-chave personalizadas.</p>
+            {% if current_user.is_authenticated %}
+                <p>Bem-vindo de volta, {{ current_user.username }}!</p>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg mt-3">Ir para o Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-custom btn-lg mt-3">Cadastre-se Agora</a>
             {% endif %}
         </div>
-    </div>
+    </header>
+
+    <section id="como-funciona" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-4">Como Funciona</h2>
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-user-plus fa-3x mb-3 text-primary"></i>
+                    <h3>Cadastre-se</h3>
+                    <p>Crie sua conta gratuitamente e configure suas preferências.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-key fa-3x mb-3 text-primary"></i>
+                    <h3>Defina Palavras-chave</h3>
+                    <p>Escolha as palavras-chave relevantes para os projetos que você busca.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-bell fa-3x mb-3 text-primary"></i>
+                    <h3>Receba Notificações</h3>
+                    <p>Fique atualizado com os melhores projetos diretamente no seu Telegram.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="vantagens" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">Por que usar nosso serviço?</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success mr-2"></i> Receba notificações de novos projetos diretamente no Telegram.</li>
+                        <li><i class="fas fa-check text-success mr-2"></i> Personalize palavras-chave para encontrar projetos relevantes.</li>
+                        <li><i class="fas fa-check text-success mr-2"></i> Automatize a busca de projetos enquanto você foca no seu trabalho.</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <img src="{{ url_for('static', filename='images/dashboard-preview.png') }}" alt="Dashboard Preview" class="img-fluid rounded shadow">
+                </div>
+            </div>
+            {% if not current_user.is_authenticated %}
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Comece Agora</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <footer class="bg-dark text-light py-4">
+        <div class="container text-center">
+            <p>&copy; 2023 Verificação de Projetos 99Freelas. Todos os direitos reservados.</p>
+        </div>
+    </footer>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>

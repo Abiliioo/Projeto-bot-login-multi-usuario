@@ -1,6 +1,7 @@
 # Python
 *.pyc
 __pycache__/
+limpar_projetos.py
 
 # Virtual environment
 .venv/
